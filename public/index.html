@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Student Attendance Management System Using DevOps Tools</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand" id="nav-brand">
+        <span>🎓 Attendance DevOps</span>
+        <span class="brand-badge">B.Tech CSE</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html" class="active" id="nav-dashboard">Dashboard</a></li>
+        <li><a href="students.html" id="nav-students">Student Management</a></li>
+        <li><a href="attendance.html" id="nav-attendance">Daily Attendance</a></li>
+        <li><a href="report.html" id="nav-reports">Monthly Reports</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="container">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title" id="dashboard-title">System Dashboard</h1>
+        <p class="page-subtitle">Real-time attendance metrics, defaulter alerts, and DevOps status</p>
+      </div>
+      <div>
+        <span class="badge badge-info" id="current-date-badge">Date: Loading...</span>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stat-grid">
+      <div class="stat-card primary" id="card-total-students">
+        <div class="stat-label">Total Students</div>
+        <div class="stat-value" id="stat-total-students">0</div>
+        <div class="stat-desc">Registered in database</div>
+      </div>
+
+      <div class="stat-card success" id="card-today-present">
+        <div class="stat-label">Today's Present Marks</div>
+        <div class="stat-value" id="stat-today-present">0</div>
+        <div class="stat-desc">Across all 7 periods</div>
+      </div>
+
+      <div class="stat-card danger" id="card-today-absent">
+        <div class="stat-label">Today's Absent Marks</div>
+        <div class="stat-value" id="stat-today-absent">0</div>
+        <div class="stat-desc">Across all 7 periods</div>
+      </div>
+
+      <div class="stat-card warning" id="card-low-attendance">
+        <div class="stat-label">Below 75% Threshold</div>
+        <div class="stat-value" id="stat-low-attendance">0</div>
+        <div class="stat-desc">Current month defaulters</div>
+      </div>
+    </div>
+
+    <!-- Attendance Status Banner -->
+    <div id="attendance-status-banner" class="alert alert-info">
+      <span id="attendance-status-text">Checking today's attendance status...</span>
+      <a href="attendance.html" class="btn btn-primary btn-sm" id="btn-quick-mark">Mark Attendance</a>
+    </div>
+
+    <!-- Quick Navigation / Workflow -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Quick Actions</h2>
+      </div>
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <a href="attendance.html" class="btn btn-primary" id="qa-mark-attendance">
+          📝 Mark Daily Attendance
+        </a>
+        <a href="students.html" class="btn btn-secondary" id="qa-manage-students">
+          👥 Manage Students
+        </a>
+        <a href="report.html" class="btn btn-secondary" id="qa-view-reports">
+          📊 View Monthly Reports & CSV
+        </a>
+      </div>
+    </div>
+
+    <!-- Defaulters / Students Below 75% Alert Section -->
+    <div class="card" id="card-defaulters">
+      <div class="card-header">
+        <h2 class="card-title">⚠️ Students Below Attendance Threshold (<span id="threshold-label">75%</span>)</h2>
+        <span class="badge badge-danger" id="badge-defaulter-count">0 Defaulters</span>
+      </div>
+      <div class="table-responsive">
+        <table id="table-defaulters">
+          <thead>
+            <tr>
+              <th>Roll No</th>
+              <th>Student Name</th>
+              <th>Department</th>
+              <th>Present / Total Periods</th>
+              <th>Attendance Percentage</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-defaulters">
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                Loading attendance statistics...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div id="toast"></div>
+
+  <!-- Footer -->
+  <footer>
+    <p>Student Attendance Management System Using DevOps Tools • B.Tech CSE Project</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

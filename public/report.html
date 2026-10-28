@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monthly Attendance Reports - Student Attendance Management System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand" id="nav-brand">
+        <span>🎓 Attendance DevOps</span>
+        <span class="brand-badge">B.Tech CSE</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html" id="nav-dashboard">Dashboard</a></li>
+        <li><a href="students.html" id="nav-students">Student Management</a></li>
+        <li><a href="attendance.html" id="nav-attendance">Daily Attendance</a></li>
+        <li><a href="report.html" class="active" id="nav-reports">Monthly Reports</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="container">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title" id="page-title-reports">Monthly Attendance Reports</h1>
+        <p class="page-subtitle">Calculate attendance percentage, identify defaulters, and export CSV</p>
+      </div>
+      <div>
+        <button type="button" class="btn btn-success" id="btn-export-csv">
+          📥 Export as CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter & Configuration Card -->
+    <div class="card" id="card-report-filters" style="padding: 1.25rem;">
+      <div class="form-row" style="align-items: flex-end;">
+        
+        <div class="form-group" style="min-width: 160px; margin-bottom: 0;">
+          <label class="form-label" for="report-month">Select Month</label>
+          <select id="report-month" class="form-control">
+            <option value="1">January (01)</option>
+            <option value="2">February (02)</option>
+            <option value="3">March (03)</option>
+            <option value="4">April (04)</option>
+            <option value="5">May (05)</option>
+            <option value="6">June (06)</option>
+            <option value="7">July (07)</option>
+            <option value="8">August (08)</option>
+            <option value="9">September (09)</option>
+            <option value="10">October (10)</option>
+            <option value="11">November (11)</option>
+            <option value="12">December (12)</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="width: 120px; margin-bottom: 0;">
+          <label class="form-label" for="report-year">Year</label>
+          <input type="number" id="report-year" class="form-control" value="2026" min="2020" max="2035">
+        </div>
+
+        <div class="form-group" style="width: 150px; margin-bottom: 0;">
+          <label class="form-label" for="report-threshold">Threshold (%)</label>
+          <input type="number" id="report-threshold" class="form-control" value="75" min="1" max="100">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <button type="button" class="btn btn-primary" id="btn-generate-report">
+            🔄 Generate Report
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Summary Stats Bar -->
+    <div class="stat-grid" id="report-stat-grid">
+      <div class="stat-card primary">
+        <div class="stat-label">Total Working Periods</div>
+        <div class="stat-value" id="summary-working-periods">0</div>
+        <div class="stat-desc">In selected month</div>
+      </div>
+
+      <div class="stat-card success">
+        <div class="stat-label">Class Average</div>
+        <div class="stat-value" id="summary-class-avg">0.00%</div>
+        <div class="stat-desc">Overall attendance</div>
+      </div>
+
+      <div class="stat-card warning">
+        <div class="stat-label">Below Threshold (<span id="summary-threshold-val">75</span>%)</div>
+        <div class="stat-value" id="summary-defaulters-count">0</div>
+        <div class="stat-desc">Students needing attention</div>
+      </div>
+    </div>
+
+    <!-- Monthly Report Table (matches project specification screenshot) -->
+    <div class="card" style="padding: 0; overflow: hidden;" id="card-monthly-table">
+      <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); background-color: #fafbfc; display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title" id="report-heading" style="margin: 0;">Monthly Attendance Summary</h3>
+        <span class="badge badge-info" id="report-date-badge">October 2026</span>
+      </div>
+
+      <div class="table-responsive">
+        <table id="table-monthly-report">
+          <thead>
+            <tr>
+              <th style="width: 100px;">Roll No.</th>
+              <th>Student</th>
+              <th>Department</th>
+              <th style="text-align: right; width: 140px;">Working periods</th>
+              <th style="text-align: right; width: 110px;">Present</th>
+              <th style="text-align: right; width: 110px;">Absent</th>
+              <th style="text-align: right; width: 130px;">Attendance</th>
+              <th style="text-align: center; width: 120px;">Details</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-monthly-report">
+            <tr>
+              <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                Loading report data...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Individual Student Detailed Modal -->
+  <div class="modal-overlay" id="modal-student-report">
+    <div class="modal" style="max-width: 750px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-student-name">Student Attendance History</h3>
+        <button type="button" class="modal-close" id="btn-close-student-modal">&times;</button>
+      </div>
+
+      <div id="modal-student-info" style="margin-bottom: 1rem;">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--dark);">Daily Period Breakdown</h4>
+      <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+        <table id="table-student-breakdown">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th class="period-header">P1</th>
+              <th class="period-header">P2</th>
+              <th class="period-header">P3</th>
+              <th class="period-header">P4</th>
+              <th class="period-header">P5</th>
+              <th class="period-header">P6</th>
+              <th class="period-header">P7</th>
+              <th style="text-align: right;">Total Present</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-student-breakdown">
+            <!-- Injected via JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-modal-close-bottom">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast"></div>
+
+  <!-- Footer -->
+  <footer>
+    <p>Student Attendance Management System Using DevOps Tools • B.Tech CSE Project</p>
+  </footer>
+
+  <script src="report.js"></script>
+</body>
+</html>

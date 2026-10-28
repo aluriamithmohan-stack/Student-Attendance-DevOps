@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Attendance - Student Attendance Management System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand" id="nav-brand">
+        <span>🎓 Attendance DevOps</span>
+        <span class="brand-badge">B.Tech CSE</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html" id="nav-dashboard">Dashboard</a></li>
+        <li><a href="students.html" id="nav-students">Student Management</a></li>
+        <li><a href="attendance.html" class="active" id="nav-attendance">Daily Attendance</a></li>
+        <li><a href="report.html" id="nav-reports">Monthly Reports</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="container">
+    <div class="page-header">
+      <div>
+        <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;" id="dept-preview-heading">
+          Daily Attendance Sheet · B.Tech CSE (AI & ML)
+        </div>
+        <h1 class="page-title" id="page-title-attendance">Daily Class Attendance</h1>
+      </div>
+      <div>
+        <!-- Legend matching project specification preview -->
+        <span class="legend-pill legend-present" id="legend-present">P — Present</span>
+        <span class="legend-pill legend-absent" id="legend-absent">A — Absent</span>
+      </div>
+    </div>
+
+    <!-- Attendance Controls Card -->
+    <div class="card" id="card-attendance-controls" style="padding: 1.25rem;">
+      <div class="form-row" style="align-items: center; justify-content: space-between;">
+        
+        <!-- Date Selector & Department Filter -->
+        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="attendance-date" style="font-size: 0.8rem; font-weight: 600;">
+              Attendance date:
+            </label>
+            <input type="date" id="attendance-date" class="form-control" style="font-weight: 600; width: 175px;">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="attendance-dept-filter" style="font-size: 0.8rem; font-weight: 600;">
+              Department:
+            </label>
+            <select id="attendance-dept-filter" class="form-control" style="width: 180px;">
+              <option value="">All Departments</option>
+              <option value="CSE (AI & ML)">CSE (AI & ML)</option>
+              <option value="CSE">CSE</option>
+              <option value="Information Technology">Information Technology</option>
+              <option value="ECE">ECE</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 0.5rem;">
+          <button type="button" class="btn btn-secondary" id="btn-mark-all-present">
+            ✅ Mark All Present
+          </button>
+          <button type="button" class="btn btn-secondary" id="btn-mark-all-absent">
+            ❌ Mark All Absent
+          </button>
+          <button type="button" class="btn btn-primary" id="btn-save-attendance">
+            💾 Save Attendance
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Status Banner for saved / loaded records -->
+    <div id="attendance-status-message" class="alert alert-info" style="display: none;"></div>
+
+    <!-- Attendance Table Card -->
+    <div class="card" style="padding: 0; overflow: hidden;" id="card-attendance-table">
+      <div class="table-responsive">
+        <table id="table-daily-attendance">
+          <thead>
+            <tr>
+              <th style="width: 120px;">Roll No.</th>
+              <th>Student</th>
+              <th class="period-header">P1</th>
+              <th class="period-header">P2</th>
+              <th class="period-header">P3</th>
+              <th class="period-header">P4</th>
+              <th class="period-header">P5</th>
+              <th class="period-header">P6</th>
+              <th class="period-header">P7</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-attendance">
+            <tr>
+              <td colspan="9" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                Loading attendance sheet...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div id="toast"></div>
+
+  <!-- Footer -->
+  <footer>
+    <p>Student Attendance Management System Using DevOps Tools • B.Tech CSE Project</p>
+  </footer>
+
+  <script src="attendance.js"></script>
+</body>
+</html>
