@@ -1,4 +1,4 @@
-// report.js - Monthly Attendance Report & CSV Export
+// report.js - Monthly Attendance Report, Combined Academic Performance & CSV Export
 
 let currentReportData = null;
 
@@ -14,15 +14,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnGenerate = document.getElementById('btn-generate-report');
   const btnExport = document.getElementById('btn-export-csv');
 
-  // Set default month & year
-  // Default to October 2026 (matching our seeded sample demonstration data)
+  // Set default month & year (Default: October 2026 for sample data)
   monthSelect.value = "10";
   yearInput.value = "2026";
   thresholdInput.value = "75";
 
   // Event Listeners
   btnGenerate.addEventListener('click', loadMonthlyReport);
-  btnExport.addEventListener('click', exportReportToCSV);
+  btnExport.addEventListener('click', triggerCSVExport);
 
   // Modal close handlers
   const modalClose = document.getElementById('btn-close-student-modal');
@@ -30,7 +29,29 @@ document.addEventListener('DOMContentLoaded', () => {
   if (modalClose) modalClose.addEventListener('click', closeStudentModal);
   if (modalCloseBottom) modalCloseBottom.addEventListener('click', closeStudentModal);
 
-  // Check URL query params (e.g. if coming from dashboard to view specific student)
+  // Modal tabs
+  const tabAttendance = document.getElementById('tab-btn-attendance');
+  const tabAcademics = document.getElementById('tab-btn-academics');
+  const contentAttendance = document.getElementById('tab-content-attendance');
+  const contentAcademics = document.getElementById('tab-content-academics');
+
+  if (tabAttendance && tabAcademics) {
+    tabAttendance.addEventListener('click', () => {
+      tabAttendance.className = 'btn btn-primary btn-sm';
+      tabAcademics.className = 'btn btn-secondary btn-sm';
+      contentAttendance.style.display = 'block';
+      contentAcademics.style.display = 'none';
+    });
+
+    tabAcademics.addEventListener('click', () => {
+      tabAcademics.className = 'btn btn-primary btn-sm';
+      tabAttendance.className = 'btn btn-secondary btn-sm';
+      contentAttendance.style.display = 'none';
+      contentAcademics.style.display = 'block';
+    });
+  }
+
+  // Check URL query params (e.g. if arriving from dashboard)
   const urlParams = new URLSearchParams(window.location.search);
   const targetStudentId = urlParams.get('student_id');
 
@@ -52,7 +73,9 @@ async function loadMonthlyReport() {
   btnGenerate.textContent = '⏳ Loading...';
 
   try {
-    const res = await fetch(`/api/report/monthly?month=${month}&year=${year}&threshold=${threshold}`);
+    const res = await fetch(`/api/report/monthly?month=${month}&year=${year}&threshold=${threshold}`, {
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : {}
+    });
     if (!res.ok) throw new Error('Failed to fetch monthly report');
     currentReportData = await res.json();
 
@@ -93,7 +116,7 @@ function updateReportSummary(data) {
   defaultersCountEl.textContent = data.below_threshold_count || 0;
 }
 
-// Render Table matching sample screenshot
+// Render Table matching sample specification
 function renderReportTable(data) {
   const tbody = document.getElementById('tbody-monthly-report');
   const students = data.students || [];
@@ -116,8 +139,12 @@ function renderReportTable(data) {
       ? `<br><span class="badge badge-danger" style="margin-top: 3px; font-size: 0.7rem;">Below ${data.threshold}%</span>` 
       : '';
 
+    const pctDisplay = student.attendance_percentage !== null 
+      ? `${student.attendance_percentage.toFixed(2)}%` 
+      : 'N/A';
+
     return `
-      <tr class="report-row ${isBelow ? 'defaulter-row-warning' : ''}" id="report-row-${student.id}">
+      <tr class="report-row ${isBelow ? 'defaulter-row-warning' : ''}" id="report-row-${student.id}" data-testid="report-row-${student.roll_no}">
         <td><strong>${escapeHtml(student.roll_no)}</strong></td>
         <td>${escapeHtml(student.name)}</td>
         <td><span class="badge badge-info">${escapeHtml(student.department)}</span></td>
@@ -125,7 +152,7 @@ function renderReportTable(data) {
         <td style="text-align: right; color: var(--success); font-weight: 600;">${student.present}</td>
         <td style="text-align: right; color: var(--danger); font-weight: 600;">${student.absent}</td>
         <td style="text-align: right; ${pctClass}">
-          <span class="attendance-pct">${student.attendance_percentage.toFixed(2)}%</span>
+          <span class="attendance-pct" data-testid="attendance-percentage">${pctDisplay}</span>
           ${alertBadge}
         </td>
         <td style="text-align: center;">
@@ -133,7 +160,8 @@ function renderReportTable(data) {
             type="button" 
             class="btn btn-secondary btn-sm" 
             onclick="viewStudentReport(${student.id})"
-            id="btn-view-student-${student.id}">
+            id="btn-view-student-${student.id}"
+            data-testid="view-student-${student.roll_no}">
             🔍 View
           </button>
         </td>
@@ -142,30 +170,39 @@ function renderReportTable(data) {
   }).join('');
 }
 
-// View individual student detailed daily history modal
+// View individual student detailed combined report modal
 async function viewStudentReport(studentId) {
   const month = document.getElementById('report-month').value;
   const year = document.getElementById('report-year').value;
 
   try {
-    const res = await fetch(`/api/report/student/${studentId}?month=${month}&year=${year}`);
+    const res = await fetch(`/api/report/student/${studentId}?month=${month}&year=${year}`, {
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : {}
+    });
     if (!res.ok) throw new Error('Failed to load student details');
     const data = await res.json();
 
     const modal = document.getElementById('modal-student-report');
     const nameEl = document.getElementById('modal-student-name');
     const infoEl = document.getElementById('modal-student-info');
-    const tbody = document.getElementById('tbody-student-breakdown');
+    const tbodyBreakdown = document.getElementById('tbody-student-breakdown');
+    const tbodyAcademics = document.getElementById('tbody-student-academics');
 
     nameEl.textContent = `${data.student.name} (${data.student.roll_no})`;
 
-    const isBelow = data.attendance_percentage < 75;
-    const statusBadge = isBelow 
-      ? `<span class="badge badge-danger">Below 75% Threshold</span>`
-      : `<span class="badge badge-success">Satisfactory Attendance</span>`;
+    const isBelow = data.attendance_percentage !== null && data.attendance_percentage < 75;
+    const statusBadge = data.attendance_percentage === null
+      ? `<span class="badge badge-secondary">No Records</span>`
+      : isBelow 
+        ? `<span class="badge badge-danger">Below 75% Threshold</span>`
+        : `<span class="badge badge-success">Satisfactory Attendance</span>`;
+
+    const pctDisplay = data.attendance_percentage !== null 
+      ? `${data.attendance_percentage.toFixed(2)}%` 
+      : 'N/A';
 
     infoEl.innerHTML = `
-      <div style="background-color: var(--bg-page); padding: 1rem; border-radius: var(--radius); border: 1px solid var(--border); display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem;">
+      <div style="background-color: var(--bg-page); padding: 1rem; border-radius: var(--radius); border: 1px solid var(--border); display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem;">
         <div>
           <small style="color: var(--text-muted); display: block;">Department</small>
           <strong>${escapeHtml(data.student.department)}</strong>
@@ -185,7 +222,7 @@ async function viewStudentReport(studentId) {
         <div>
           <small style="color: var(--text-muted); display: block;">Attendance %</small>
           <strong style="color: ${isBelow ? 'var(--danger)' : 'var(--success)'}; font-size: 1.1rem;">
-            ${data.attendance_percentage.toFixed(2)}%
+            ${pctDisplay}
           </strong>
         </div>
         <div style="display: flex; align-items: center;">
@@ -194,9 +231,10 @@ async function viewStudentReport(studentId) {
       </div>
     `;
 
+    // 1. Daily Attendance History
     const history = data.history || [];
     if (history.length === 0) {
-      tbody.innerHTML = `
+      tbodyBreakdown.innerHTML = `
         <tr>
           <td colspan="9" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
             No attendance records found for this student in ${monthNames[data.month - 1]} ${data.year}.
@@ -204,7 +242,7 @@ async function viewStudentReport(studentId) {
         </tr>
       `;
     } else {
-      tbody.innerHTML = history.map(row => {
+      tbodyBreakdown.innerHTML = history.map(row => {
         let periodCells = '';
         for (let p = 1; p <= 7; p++) {
           const st = row.periods[p] || '-';
@@ -225,6 +263,30 @@ async function viewStudentReport(studentId) {
       }).join('');
     }
 
+    // 2. Internal Marks / Academic Performance
+    const marks = data.internal_marks || [];
+    if (marks.length === 0) {
+      tbodyAcademics.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
+            No internal assessment marks recorded for this student. <a href="marks.html">Enter marks in Internal Marks</a>.
+          </td>
+        </tr>
+      `;
+    } else {
+      tbodyAcademics.innerHTML = marks.map(m => `
+        <tr>
+          <td><strong>${escapeHtml(m.subject)}</strong></td>
+          <td>${escapeHtml(m.assessment_name)}</td>
+          <td style="text-align: right; font-weight: 600;">${m.marks_obtained}</td>
+          <td style="text-align: right; color: var(--text-muted);">${m.max_marks}</td>
+          <td style="text-align: right; font-weight: 700; color: ${m.marks_percentage >= 75 ? 'var(--success)' : 'var(--danger)'};">
+            ${m.marks_percentage}%
+          </td>
+        </tr>
+      `).join('');
+    }
+
     modal.classList.add('active');
   } catch (error) {
     showToast('Failed to view student report: ' + error.message, 'error');
@@ -236,55 +298,23 @@ function closeStudentModal() {
   modal.classList.remove('active');
 }
 
-// CSV Export functionality
-function exportReportToCSV() {
-  if (!currentReportData || !currentReportData.students || currentReportData.students.length === 0) {
-    showToast('No report data available to export. Please generate a report first.', 'warning');
-    return;
-  }
+// CSV Export via Backend API
+function triggerCSVExport() {
+  const month = document.getElementById('report-month').value;
+  const year = document.getElementById('report-year').value;
+  const threshold = document.getElementById('report-threshold').value || 75;
 
-  // Exact required columns:
-  // Roll Number, Student Name, Department, Working Periods, Present, Absent, Attendance Percentage
-  const headers = [
-    'Roll Number',
-    'Student Name',
-    'Department',
-    'Working Periods',
-    'Present',
-    'Absent',
-    'Attendance Percentage'
-  ];
+  const exportUrl = `/api/report/monthly/export?month=${month}&year=${year}&threshold=${threshold}`;
+  
+  // Download using invisible anchor
+  const link = document.createElement('a');
+  link.href = exportUrl;
+  link.setAttribute('download', `attendance_report_${year}-${String(month).padStart(2, '0')}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 
-  const rows = currentReportData.students.map(s => [
-    `"${s.roll_no}"`,
-    `"${s.name.replace(/"/g, '""')}"`,
-    `"${s.department.replace(/"/g, '""')}"`,
-    s.working_periods,
-    s.present,
-    s.absent,
-    `"${s.attendance_percentage.toFixed(2)}%"`
-  ]);
-
-  const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
-
-  // Trigger download
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const filename = `attendance_report_${currentReportData.month_string}.csv`;
-
-  if (navigator.msSaveBlob) {
-    navigator.msSaveBlob(blob, filename);
-  } else {
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-
-  showToast(`Exported ${filename} successfully!`, 'success');
+  showToast(`Downloading monthly CSV export for ${monthNames[month - 1]} ${year}...`, 'success');
 }
 
 // Utility functions

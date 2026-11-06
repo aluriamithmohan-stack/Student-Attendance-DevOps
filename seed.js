@@ -5,10 +5,11 @@ async function seedDatabase() {
 
   try {
     // 1. Clear existing data for clean re-seeding
+    await run('DELETE FROM internal_marks');
     await run('DELETE FROM attendance');
     await run('DELETE FROM students');
-    await run('DELETE FROM sqlite_sequence WHERE name IN ("students", "attendance")');
-    console.log('Cleared existing student and attendance records.');
+    await run('DELETE FROM sqlite_sequence WHERE name IN ("students", "attendance", "internal_marks")');
+    console.log('Cleared existing student, attendance, and marks records.');
 
     // 2. Insert Test Students
     const testStudents = [
@@ -26,7 +27,7 @@ async function seedDatabase() {
 
     for (const student of testStudents) {
       await run(
-        'INSERT INTO students (roll_no, name, department) VALUES (?, ?, ?)',
+        'INSERT INTO students (roll_no, name, department, is_active) VALUES (?, ?, ?, 1)',
         [student.roll_no, student.name, student.department]
       );
     }
@@ -37,8 +38,7 @@ async function seedDatabase() {
     const studentMap = {};
     students.forEach(s => { studentMap[s.roll_no] = s.id; });
 
-    // Generate 22 working days for October 2026 (matching sample screenshot with 154 working periods = 22 days * 7 periods)
-    // 2026-10 working days
+    // Generate 22 working days for October 2026 (154 working periods = 22 days * 7 periods)
     const workingDates = [];
     for (let day = 1; day <= 30; day++) {
       const d = new Date(2026, 9, day); // month 9 is October (0-indexed)
@@ -51,8 +51,7 @@ async function seedDatabase() {
       }
     }
 
-    // Number of periods per day = 7 -> 22 * 7 = 154 working periods
-    // Target Present counts matching the document's sample screenshot:
+    // Target Present counts matching sample data:
     // 101: 140 present (14 absent) -> 90.91%
     // 102: 130 present (24 absent) -> 84.42%
     // 103: 115 present (39 absent) -> 74.68% (Below 75%)
@@ -65,7 +64,7 @@ async function seedDatabase() {
       '104': 4,
       '105': 9,
       '106': 18,
-      '107': 45, // Also below 75%
+      '107': 45, // Below 75%
       '108': 8,
       '109': 12,
       '110': 3
@@ -78,9 +77,6 @@ async function seedDatabase() {
     for (const student of students) {
       const neededAbsences = targetAbsences[student.roll_no] || 10;
       let absenceCount = 0;
-
-      // We have 154 slots (22 days * 7 periods)
-      // Distribute absences across the days
       let slotIndex = 0;
       const interval = Math.floor(154 / neededAbsences);
 
@@ -103,14 +99,13 @@ async function seedDatabase() {
       }
     }
 
-    // Also seed today's date if not in October 2026 so dashboard shows today's data immediately!
+    // Also seed today's date so dashboard has immediate stats
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     if (!workingDates.includes(todayStr)) {
       console.log(`Seeding sample attendance for today (${todayStr})...`);
       for (const student of students) {
         for (let period = 1; period <= 7; period++) {
-          // Default to Present, with student 103 absent in P2 and P5
           let status = 'Present';
           if (student.roll_no === '103' && (period === 2 || period === 5)) status = 'Absent';
           if (student.roll_no === '107' && period >= 4) status = 'Absent';
@@ -125,17 +120,43 @@ async function seedDatabase() {
       }
     }
 
+    // 3. Seed Internal Marks
+    console.log('Seeding sample internal marks...');
+    const sampleAssessments = [
+      { subject: 'DevOps & Cloud Computing', assessment: 'Internal Test 1', max: 25 },
+      { subject: 'DevOps & Cloud Computing', assessment: 'Lab Assessment', max: 50 },
+      { subject: 'Machine Learning', assessment: 'Mid-Term Exam', max: 30 }
+    ];
+
+    const studentMarksRatio = {
+      '101': 0.92,
+      '102': 0.84,
+      '103': 0.68,
+      '104': 0.96,
+      '105': 0.90,
+      '106': 0.82,
+      '107': 0.70,
+      '108': 0.88,
+      '109': 0.78,
+      '110': 0.95
+    };
+
+    for (const student of students) {
+      const ratio = studentMarksRatio[student.roll_no] || 0.80;
+      for (const a of sampleAssessments) {
+        const marksObtained = Math.round(a.max * ratio * 10) / 10;
+        await run(
+          `INSERT INTO internal_marks (student_id, subject, assessment_name, marks_obtained, max_marks)
+           VALUES (?, ?, ?, ?, ?)`,
+          [student.id, a.subject, a.assessment, marksObtained, a.max]
+        );
+      }
+    }
+
     await run('COMMIT;');
 
     console.log('✅ Seeding completed successfully!');
-    console.log('Test student summary:');
-    console.log('- 101: Student 1 (90.91%)');
-    console.log('- 102: Student 2 (84.42%)');
-    console.log('- 103: Student 3 (74.68% - Low Attendance Alert)');
-    console.log('- 104: Student 4 (97.40%)');
-    console.log('- 105: Student 5 (94.16%)');
-    console.log('- 107: Student 7 (70.78% - Low Attendance Alert)');
-
+    console.log('Seeded 10 students, 1540+ attendance periods, and internal marks.');
     process.exit(0);
   } catch (error) {
     await run('ROLLBACK;').catch(() => {});

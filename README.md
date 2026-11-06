@@ -1,24 +1,25 @@
-# Student Attendance Management System Using DevOps Tools
+# Student Attendance and Academic Performance Management System Using DevOps Tools
 
-A complete, full-stack web application designed for engineering colleges to manage class-wise student attendance across seven daily periods and automatically calculate monthly attendance summaries, defaulter alerts, and CSV exports.
+A complete, production-ready web application designed for engineering colleges to manage student records, daily 7-period attendance, monthly attendance reports, defaulter identification (<75%), internal assessment marks, and combined academic performance.
 
-This project implements modern DevOps practices across the entire software development lifecycle: **Git, GitHub, Jenkins, Docker, Kubernetes, and Selenium WebDriver**.
+The project incorporates modern DevOps tools and practices across the entire software development lifecycle: **Git, GitHub, Jenkins CI/CD, Docker Containerization, Kubernetes Orchestration, and automated Selenium WebDriver Testing (Java 17/25, Maven, JUnit 5)**.
 
 ---
 
 ## 1. Technology Stack
 
-- **Frontend:** HTML5, CSS3, Vanilla JavaScript (Single-Page Dashboard, Modal Editors, Responsive Tables, Interactive P/A Period Toggles)
-- **Backend:** Node.js, Express.js (RESTful APIs with robust error handling)
-- **Database:** SQLite3 (`database/attendance.db`) with Foreign Keys, Cascades, and UPSERT constraints
-- **Containerization:** Docker & Docker Compose
-- **Continuous Integration (CI):** Jenkins Declarative Pipeline (`Jenkinsfile`)
-- **Container Orchestration:** Kubernetes (Deployment, NodePort Service, PersistentVolumeClaim)
-- **Automated Testing:** Selenium WebDriver (JavaScript, Google Chrome)
+- **Frontend:** HTML5, CSS3, Vanilla JavaScript (No React, Next.js, or complex frameworks; clean modular design).
+- **Backend:** Node.js, Express.js (RESTful APIs with session authentication middleware).
+- **Database:** SQLite3 (`database/attendance.db`) with Foreign Keys, Cascades, and UPSERT constraints.
+- **Security:** Faculty session tokens, bcrypt password hashing, HTTP-only session cookies and Bearer tokens.
+- **Testing:** Java 17/25, Maven 3.9.9, JUnit 5, Selenium WebDriver 4.25.0, Google Chrome (Headless).
+- **Containerization:** Docker & Docker Compose (`Dockerfile`, `docker-compose.yml`).
+- **Continuous Integration (CI):** Jenkins Declarative Pipeline (`Jenkinsfile`).
+- **Container Orchestration:** Kubernetes (`k8s/pvc.yaml`, `k8s/deployment.yaml`, `k8s/service.yaml`).
 
 ---
 
-## 2. Project Directory Structure
+## 2. Directory Structure
 
 ```text
 Student-Attendance-DevOps/
@@ -27,16 +28,20 @@ Student-Attendance-DevOps/
 │   ├── attendance.db          # Auto-generated SQLite persistent database
 │   └── db.js                  # Database initialization, schemas & connection pool
 │
-├── public/                    # Client-side frontend assets
-│   ├── index.html             # Real-time System Dashboard
-│   ├── students.html          # Student Registration & Roster Management
-│   ├── attendance.html        # Daily Attendance Sheet (7 Periods)
-│   ├── report.html            # Monthly Summary, Defaulter Alerts & CSV Export
+├── public/                    # Client-side frontend assets (Vanilla JS / HTML / CSS)
+│   ├── login.html             # Faculty authentication interface
+│   ├── index.html             # Real-time System Dashboard & Defaulter Overview
+│   ├── students.html          # Student Registration, Roster Search & Soft Delete
+│   ├── attendance.html        # Daily Attendance Sheet (7 Periods P1-P7)
+│   ├── report.html            # Monthly Summary, Defaulters, Combined Report & CSV Export
+│   ├── marks.html             # Internal Marks Management & Validation
 │   ├── style.css              # Custom styling matching project specifications
+│   ├── auth.js                # Session validation, navbar state & logout
 │   ├── script.js              # Dashboard metrics & defaulter notifications
 │   ├── students.js            # Student CRUD & search filtering logic
 │   ├── attendance.js          # Period toggle & bulk attendance save logic
-│   └── report.js              # Monthly calculation & CSV generation logic
+│   ├── report.js              # Monthly calculation, combined modal & CSV download
+│   └── marks.js               # Marks CRUD, percentage calculation & validations
 │
 ├── k8s/                       # Kubernetes deployment manifests
 │   ├── pvc.yaml               # PersistentVolumeClaim for SQLite database storage
@@ -44,16 +49,22 @@ Student-Attendance-DevOps/
 │   └── service.yaml           # NodePort Service (Port 30080)
 │
 ├── tests/
-│   └── selenium-test.js       # Automated suite covering all 10 project test cases
+│   └── selenium-test.js       # Node.js automated suite (10 required test cases)
+│
+├── selenium-tests/            # Java Maven Selenium Test Suite (10 Required Test Cases)
+│   ├── pom.xml                # Maven configuration with Selenium Java & JUnit 5
+│   └── src/test/java/tests/
+│       ├── BaseTest.java                      # Chrome headless setup & shared test helpers
+│       └── AttendanceSystemSeleniumTests.java # Exactly the 10 Necessary Test Cases (TC01 - TC10)
 │
 ├── Dockerfile                 # Production multi-stage Docker build
 ├── .dockerignore              # Docker build exclusions
 ├── docker-compose.yml         # Container orchestration with volume persistence
 ├── Jenkinsfile                # Jenkins CI pipeline stages
 ├── server.js                  # Express backend application server & REST APIs
-├── seed.js                    # Sample data seeding script (154 working periods)
+├── seed.js                    # Sample data seeding script (10 students, 1540+ period records)
 ├── package.json               # Project dependencies and script shortcuts
-├── .gitignore                 # Version control exclusions
+├── TEST_CASE_EXECUTION.md     # Complete 27-test individual execution commands
 └── README.md                  # Comprehensive project documentation
 ```
 
@@ -61,20 +72,45 @@ Student-Attendance-DevOps/
 
 ## 3. Database Schema
 
-The SQLite database (`database/attendance.db`) is automatically created upon starting the server.
+The SQLite database (`database/attendance.db`) is automatically initialized upon server start:
 
-### Students Table (`students`)
+### 1. `faculty` Table
 ```sql
-CREATE TABLE IF NOT EXISTS students (
+CREATE TABLE IF NOT EXISTS faculty (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  roll_no TEXT NOT NULL UNIQUE,
+  username TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
   name TEXT NOT NULL,
   department TEXT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
-### Attendance Table (`attendance`)
+### 2. `faculty_sessions` Table
+```sql
+CREATE TABLE IF NOT EXISTS faculty_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  faculty_id INTEGER NOT NULL,
+  token TEXT NOT NULL UNIQUE,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (faculty_id) REFERENCES faculty(id) ON DELETE CASCADE
+);
+```
+
+### 3. `students` Table (with Soft Delete Support)
+```sql
+CREATE TABLE IF NOT EXISTS students (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  roll_no TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  department TEXT NOT NULL,
+  is_active INTEGER DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### 4. `attendance` Table (with UPSERT Constraint)
 ```sql
 CREATE TABLE IF NOT EXISTS attendance (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -88,148 +124,151 @@ CREATE TABLE IF NOT EXISTS attendance (
 );
 ```
 
-> **Constraint Protection:** The composite unique constraint `UNIQUE (student_id, attendance_date, period)` guarantees duplicate records cannot be created for the same student on the same date and period.
+### 5. `internal_marks` Table
+```sql
+CREATE TABLE IF NOT EXISTS internal_marks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL,
+  subject TEXT NOT NULL,
+  assessment_name TEXT NOT NULL,
+  marks_obtained REAL NOT NULL CHECK (marks_obtained >= 0),
+  max_marks REAL NOT NULL CHECK (max_marks > 0),
+  marks_percentage REAL GENERATED ALWAYS AS (ROUND((marks_obtained / max_marks) * 100.0, 2)) STORED,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+```
 
 ---
 
 ## 4. Backend REST APIs
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/students` | Get all registered students ordered by roll number |
-| `POST` | `/api/students` | Register a new student (validates unique roll number) |
-| `PUT` | `/api/students/:id` | Update existing student name, roll number, or department |
-| `DELETE` | `/api/students/:id` | Delete a student and cascade delete attendance records |
-| `GET` | `/api/attendance/:date` | Retrieve all 7 period records for a specific date |
-| `POST` | `/api/attendance` | Bulk save/upsert attendance records inside a transaction |
-| `GET` | `/api/report/monthly` | Calculate working periods, attendance % and defaulters |
-| `GET` | `/api/report/student/:id` | Fetch individual student summary & daily attendance history |
-| `GET` | `/api/dashboard` | Real-time counts, today's status, and low attendance alerts |
+| Module | Method | Endpoint | Description |
+| :--- | :--- | :--- | :--- |
+| **Auth** | `POST` | `/api/auth/login` | Authenticate faculty and generate secure session |
+| **Auth** | `POST` | `/api/auth/logout` | Terminate session and invalidate cookie/token |
+| **Auth** | `GET` | `/api/auth/me` | Fetch currently logged-in faculty details |
+| **Students** | `GET` | `/api/students` | List active students (ordered by roll number) |
+| **Students** | `POST` | `/api/students` | Register student (validates unique roll number) |
+| **Students** | `PUT` | `/api/students/:id` | Update student name, roll number, or department |
+| **Students** | `DELETE` | `/api/students/:id` | Soft delete (`is_active = 0`), preserving history |
+| **Attendance** | `GET` | `/api/attendance/:date` | Get 7 period records for date |
+| **Attendance** | `POST` | `/api/attendance` | Bulk save/upsert attendance (prevents duplicates) |
+| **Reports** | `GET` | `/api/report/monthly` | Calculate working periods, attendance % & defaulters |
+| **Reports** | `GET` | `/api/report/student/:id` | Individual student summary & 7-period daily history |
+| **Reports** | `GET` | `/api/report/monthly/export` | Download monthly report as RFC 4180 CSV file |
+| **Marks** | `GET` | `/api/marks` | List all internal marks records |
+| **Marks** | `POST` | `/api/marks` | Record new internal assessment marks |
+| **Marks** | `PUT` | `/api/marks/:id` | Update assessment marks score |
+| **Marks** | `DELETE` | `/api/marks/:id` | Delete an internal mark entry |
+| **Academics** | `GET` | `/api/report/academic/:id` | Combined report with attendance + internal marks |
+| **Dashboard** | `GET` | `/api/dashboard` | Real-time statistics, today counts, defaulters list |
 
 ---
 
-## 5. Phase 1: Local Execution & Testing
+## 5. Local Setup & Execution
 
 ### 1. Install Node.js Dependencies
-```bash
+```powershell
 npm install
 ```
 
-### 2. Seed Sample Test Data
-Populate 10 students across CSE / AI&ML with 22 working days (154 periods per student) matching project specification preview figures:
-```bash
-npm run seed
+### 2. Seed Database
+Seeds 10 sample students, faculty account (`faculty` / `password123`), 1540+ period attendance records for October 2026, and internal marks:
+```powershell
+node seed.js
 ```
 
 ### 3. Start Application
-```bash
-npm start
+```powershell
+node server.js
 ```
 Open your browser and navigate to:
 ```text
 http://localhost:3000
 ```
+Login with:
+- **Username:** `faculty`
+- **Password:** `password123`
 
 ---
 
-## 6. Phase 2: Git and GitHub Setup
+## 6. Automated Testing (Selenium WebDriver)
 
-```bash
-# 1. Initialize local repository
-git init
+The project includes **EXACTLY the 10 Necessary Test Cases (TC01 - TC10)** strictly defined in the project specification and syllabus.
 
-# 2. Add files and make initial commit
-git add .
-git commit -m "Initial commit: Student Attendance Management System with DevOps configs"
-
-# 3. Create a GitHub repository called 'Student-Attendance-DevOps' and link it
-git branch -M main
-git remote add origin https://github.com/<YOUR_GITHUB_USERNAME>/Student-Attendance-DevOps.git
-
-# 4. Push to GitHub
-git push -u origin main
+### Run All 10 Test Cases via Maven (Java JUnit 5):
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-25"; & "C:\Users\amith\maven\apache-maven-3.9.9\bin\mvn.cmd" -f selenium-tests/pom.xml test
 ```
 
----
-
-## 7. Phase 3: Docker Containerization
-
-### Build Docker Image
-```bash
-docker build -t student-attendance-devops:latest .
-```
-
-### Run Docker Container with Persistent Volume
-```bash
-docker run -d -p 3000:3000 --name student_attendance -v $(pwd)/database:/app/database student-attendance-devops:latest
-```
-
-### Run Using Docker Compose
-```bash
-docker compose up -d
-```
-Check container logs and status:
-```bash
-docker compose ps
-docker compose logs -f
-```
-
----
-
-## 8. Phase 4: Jenkins CI Pipeline
-
-The included `Jenkinsfile` defines a 6-stage declarative pipeline:
-
-1. **Checkout SCM:** Clones repository from GitHub.
-2. **Install Dependencies:** Executes `npm install`.
-3. **Syntax & DB Verification:** Verifies Node syntax (`node -c`) and runs seed script.
-4. **Docker Build:** Builds and tags `student-attendance-devops:${BUILD_NUMBER}`.
-5. **Container Health Check:** Runs an isolated test container on port 3001 and probes `/api/dashboard`.
-6. **Automated Selenium Tests:** Executes end-to-end Selenium tests.
-
----
-
-## 9. Phase 5: Kubernetes Deployment
-
-Deploy the containerized application to Kubernetes (Minikube, Docker Desktop K8s, or Cloud Cluster):
-
-```bash
-# 1. Apply PersistentVolumeClaim
-kubectl apply -f k8s/pvc.yaml
-
-# 2. Apply Deployment
-kubectl apply -f k8s/deployment.yaml
-
-# 3. Apply NodePort Service
-kubectl apply -f k8s/service.yaml
-
-# 4. Check deployment and pod status
-kubectl get pods -l app=student-attendance
-kubectl get svc student-attendance-service
-```
-
-Access the application in your browser:
-- **Minikube:** `minikube service student-attendance-service`
-- **Docker Desktop / Local Node:** `http://localhost:30080`
-
----
-
-## 10. Phase 6: Selenium Automated Testing
-
-The automated test suite runs 10 end-to-end test cases covering every functional requirement:
-
-```bash
+### Run All 10 Test Cases via NPM (JavaScript / Jenkins CI Pipeline):
+```powershell
 npm run test:selenium
 ```
 
-### 10 Automated Test Cases:
-1. **TC-1:** Verify attendance page displays registered students.
-2. **TC-2:** Verify attendance can be marked and toggled for all seven daily periods (P1 to P7).
-3. **TC-3:** Verify attendance records are saved successfully for a selected date.
-4. **TC-4:** Verify invalid student data and duplicate roll numbers are rejected with friendly error messages.
-5. **TC-5:** Verify duplicate attendance entries for the same student, date, and period are prevented.
-6. **TC-6:** Verify monthly attendance calculations (`Working Periods = Present + Absent`).
-7. **TC-7:** Verify attendance percentage formula: `(Present / Working Periods) * 100`.
-8. **TC-8:** Verify students below the attendance threshold (e.g., 74.68% < 75%) are identified and highlighted.
-9. **TC-9:** Verify monthly report table generation and CSV export functionality.
-10. **TC-10:** Verify saved attendance records remain persistent across application restarts.
+### The 10 Necessary Test Cases:
+1. **TC01:** Verify attendance page displays all registered students.
+2. **TC02:** Verify attendance can be marked for all seven periods (P1 to P7).
+3. **TC03:** Verify attendance is saved successfully for a selected date.
+4. **TC04:** Verify missing or invalid student information and duplicate roll numbers are handled.
+5. **TC05:** Verify duplicate attendance entries are prevented (UPSERT / UNIQUE constraint).
+6. **TC06:** Verify monthly attendance totals are calculated correctly (`Working = Present + Absent`).
+7. **TC07:** Verify attendance percentage is displayed correctly: `(Present / Working) * 100`.
+8. **TC08:** Verify students below the configured attendance threshold (<75%) are identified.
+9. **TC09:** Verify monthly report can be generated and exported as CSV.
+10. **TC10:** Verify saved records remain available and persistent in SQLite database.
+
+### Run Individual Test Case:
+Every test case is independently executable. Example:
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-25"; & "C:\Users\amith\maven\apache-maven-3.9.9\bin\mvn.cmd" -f selenium-tests/pom.xml -Dtest=AttendanceSystemSeleniumTests#TC01_attendancePageDisplaysRegisteredStudents test
+```
+See [`TEST_CASE_EXECUTION.md`](file:///c:/Users/amith/Desktop/Student%20Attendance/TEST_CASE_EXECUTION.md) for individual commands for all 10 test cases.
+
+---
+
+## 7. DevOps Pipeline & Configurations
+
+### Phase 2: Git & GitHub
+```powershell
+git init
+git add .
+git commit -m "Complete Student Attendance & Academic Performance System"
+git branch -M main
+git remote add origin https://github.com/<YOUR_USERNAME>/Student-Attendance-DevOps.git
+git push -u origin main
+```
+
+### Phase 3: Docker Containerization
+```powershell
+# Build image
+docker build -t student-attendance-devops:latest .
+
+# Run with persistent volume
+docker run -d -p 3000:3000 --name student_attendance -v ${PWD}/database:/app/database student-attendance-devops:latest
+
+# Or using Docker Compose
+docker compose up -d
+```
+
+### Phase 4: Jenkins CI Pipeline
+The declarative pipeline in `Jenkinsfile` automates:
+1. SCM Checkout
+2. Node dependency installation
+3. Syntax verification and seed script execution
+4. Production Docker build and tagging
+5. Container health check on port 3001
+6. Automated Selenium test execution
+
+### Phase 5: Kubernetes Orchestration
+```powershell
+kubectl apply -f k8s/pvc.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+
+# Verify deployment
+kubectl get pods -l app=student-attendance
+kubectl get svc student-attendance-service
+```
+Access via NodePort at `http://localhost:30080`.

@@ -38,10 +38,12 @@ function getTodayDateString() {
   return `${year}-${month}-${day}`;
 }
 
-// Fetch all registered students
+// Fetch all active registered students
 async function loadStudents() {
   try {
-    const res = await fetch('/api/students');
+    const res = await fetch('/api/students', {
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : {}
+    });
     if (!res.ok) throw new Error('Failed to load students');
     studentsList = await res.json();
   } catch (error) {
@@ -102,7 +104,7 @@ function renderAttendanceTable() {
     tbody.innerHTML = `
       <tr>
         <td colspan="9" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-          No registered students found for this department. 
+          No registered active students found for this department. 
           <a href="students.html">Add students in Student Management</a>.
         </td>
       </tr>
@@ -125,6 +127,7 @@ function renderAttendanceTable() {
             class="${btnClass}" 
             data-student-id="${student.id}" 
             data-period="${period}"
+            data-testid="period-${period}"
             id="period-btn-${student.id}-${period}"
             onclick="togglePeriod(${student.id}, ${period})">
             ${btnText}
@@ -134,7 +137,7 @@ function renderAttendanceTable() {
     }
 
     return `
-      <tr class="attendance-row" id="attendance-row-${student.id}">
+      <tr class="attendance-row" id="attendance-row-${student.id}" data-testid="attendance-row-${student.roll_no}">
         <td><strong>${escapeHtml(student.roll_no)}</strong></td>
         <td>
           <div>${escapeHtml(student.name)}</div>
@@ -217,7 +220,9 @@ async function saveAttendance() {
   try {
     const res = await fetch('/api/attendance', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: typeof getAuthHeaders === 'function' 
+        ? getAuthHeaders({ 'Content-Type': 'application/json' }) 
+        : { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date, records })
     });
 

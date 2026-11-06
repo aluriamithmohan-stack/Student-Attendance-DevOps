@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Daily Attendance - Student Attendance Management System</title>
+  <title>Daily Attendance - Student Attendance & Academic Performance System</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,14 +12,15 @@
   <nav class="navbar">
     <div class="nav-container">
       <a href="index.html" class="brand" id="nav-brand">
-        <span>🎓 Attendance DevOps</span>
+        <span>🎓 Attendance & Academic DevOps</span>
         <span class="brand-badge">B.Tech CSE</span>
       </a>
       <ul class="nav-links">
         <li><a href="index.html" id="nav-dashboard">Dashboard</a></li>
         <li><a href="students.html" id="nav-students">Student Management</a></li>
         <li><a href="attendance.html" class="active" id="nav-attendance">Daily Attendance</a></li>
-        <li><a href="report.html" id="nav-reports">Monthly Reports</a></li>
+        <li><a href="marks.html" id="nav-marks">Internal Marks</a></li>
+        <li><a href="report.html" id="nav-reports">Reports & Performance</a></li>
       </ul>
     </div>
   </nav>
@@ -50,7 +51,12 @@
             <label class="form-label" for="attendance-date" style="font-size: 0.8rem; font-weight: 600;">
               Attendance date:
             </label>
-            <input type="date" id="attendance-date" class="form-control" style="font-weight: 600; width: 175px;">
+            <input 
+              type="date" 
+              id="attendance-date" 
+              class="form-control" 
+              style="font-weight: 600; width: 175px;" 
+              data-testid="attendance-date">
           </div>
 
           <div class="form-group" style="margin-bottom: 0;">
@@ -69,13 +75,13 @@
 
         <!-- Action Buttons -->
         <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 0.5rem;">
-          <button type="button" class="btn btn-secondary" id="btn-mark-all-present">
+          <button type="button" class="btn btn-secondary" id="btn-mark-all-present" data-testid="mark-all-present">
             ✅ Mark All Present
           </button>
-          <button type="button" class="btn btn-secondary" id="btn-mark-all-absent">
+          <button type="button" class="btn btn-secondary" id="btn-mark-all-absent" data-testid="mark-all-absent">
             ❌ Mark All Absent
           </button>
-          <button type="button" class="btn btn-primary" id="btn-save-attendance">
+          <button type="button" class="btn btn-primary" id="btn-save-attendance" data-testid="save-attendance">
             💾 Save Attendance
           </button>
         </div>
@@ -84,12 +90,12 @@
     </div>
 
     <!-- Status Banner for saved / loaded records -->
-    <div id="attendance-status-message" class="alert alert-info" style="display: none;"></div>
+    <div id="attendance-status-message" class="alert alert-info" data-testid="attendance-status-message" style="display: none;"></div>
 
     <!-- Attendance Table Card -->
     <div class="card" style="padding: 0; overflow: hidden;" id="card-attendance-table">
       <div class="table-responsive">
-        <table id="table-daily-attendance">
+        <table id="table-daily-attendance" data-testid="table-daily-attendance">
           <thead>
             <tr>
               <th style="width: 120px;">Roll No.</th>
@@ -120,9 +126,10 @@
 
   <!-- Footer -->
   <footer>
-    <p>Student Attendance Management System Using DevOps Tools • B.Tech CSE Project</p>
+    <p>Student Attendance and Academic Performance Management System Using DevOps Tools • B.Tech CSE Project</p>
   </footer>
 
+  <script src="auth.js"></script>
   <script src="attendance.js"></script>
 </body>
 </html>

@@ -23,3 +23,6 @@ Thumbs.db
 # Test output & screenshots
 tests/screenshots/
 test-reports/
+target/
+selenium-tests/target/
+extracted_media/

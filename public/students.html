@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Management - Student Attendance Management System</title>
+  <title>Student Management - Student Attendance & Academic Performance System</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,14 +12,15 @@
   <nav class="navbar">
     <div class="nav-container">
       <a href="index.html" class="brand" id="nav-brand">
-        <span>🎓 Attendance DevOps</span>
+        <span>🎓 Attendance & Academic DevOps</span>
         <span class="brand-badge">B.Tech CSE</span>
       </a>
       <ul class="nav-links">
         <li><a href="index.html" id="nav-dashboard">Dashboard</a></li>
         <li><a href="students.html" class="active" id="nav-students">Student Management</a></li>
         <li><a href="attendance.html" id="nav-attendance">Daily Attendance</a></li>
-        <li><a href="report.html" id="nav-reports">Monthly Reports</a></li>
+        <li><a href="marks.html" id="nav-marks">Internal Marks</a></li>
+        <li><a href="report.html" id="nav-reports">Reports & Performance</a></li>
       </ul>
     </div>
   </nav>
@@ -43,23 +44,35 @@
       </div>
 
       <!-- Error / Feedback Alert -->
-      <div id="student-form-alert" class="alert alert-danger" style="display: none;"></div>
+      <div id="student-form-alert" class="alert alert-danger" data-testid="student-error" style="display: none;"></div>
 
-      <form id="form-add-student" novalidate>
+      <form id="form-add-student" onsubmit="handleAddStudent(event); return false;" novalidate>
         <div class="form-row">
           <div class="form-group" style="flex: 1; min-width: 180px;">
             <label class="form-label" for="input-roll-no">Roll Number *</label>
-            <input type="text" id="input-roll-no" class="form-control" placeholder="e.g. 101 or 22CS01" required>
+            <input 
+              type="text" 
+              id="input-roll-no" 
+              class="form-control" 
+              placeholder="e.g. 101 or 22CS01" 
+              data-testid="student-roll-number" 
+              required>
           </div>
 
           <div class="form-group" style="flex: 2; min-width: 220px;">
             <label class="form-label" for="input-student-name">Student Full Name *</label>
-            <input type="text" id="input-student-name" class="form-control" placeholder="e.g. Amit Kumar" required>
+            <input 
+              type="text" 
+              id="input-student-name" 
+              class="form-control" 
+              placeholder="e.g. Amit Kumar" 
+              data-testid="student-name" 
+              required>
           </div>
 
           <div class="form-group" style="flex: 1.5; min-width: 200px;">
             <label class="form-label" for="select-department">Department *</label>
-            <select id="select-department" class="form-control" required>
+            <select id="select-department" class="form-control" data-testid="student-department" required>
               <option value="">Select Department</option>
               <option value="CSE (AI & ML)">CSE (AI & ML)</option>
               <option value="CSE">CSE</option>
@@ -69,7 +82,7 @@
           </div>
 
           <div class="form-group">
-            <button type="submit" class="btn btn-primary" id="btn-add-student">
+            <button type="button" class="btn btn-primary" id="btn-add-student" data-testid="save-student" onclick="handleAddStudent(event)">
               ➕ Add Student
             </button>
           </div>
@@ -81,10 +94,10 @@
     <div class="card" style="padding: 1rem;">
       <div class="form-row" style="align-items: center;">
         <div class="form-group" style="flex: 2; margin-bottom: 0;">
-          <input type="text" id="input-search-student" class="form-control" placeholder="🔍 Search student by roll no or name...">
+          <input type="text" id="input-search-student" class="form-control" placeholder="🔍 Search student by roll no or name..." data-testid="student-search">
         </div>
         <div class="form-group" style="flex: 1; margin-bottom: 0;">
-          <select id="filter-department" class="form-control">
+          <select id="filter-department" class="form-control" data-testid="student-dept-filter">
             <option value="">All Departments</option>
             <option value="CSE (AI & ML)">CSE (AI & ML)</option>
             <option value="CSE">CSE</option>
@@ -99,7 +112,7 @@
     <!-- Students Table -->
     <div class="card" style="padding: 0; overflow: hidden;">
       <div class="table-responsive">
-        <table id="table-students">
+        <table id="table-students" data-testid="table-students">
           <thead>
             <tr>
               <th style="width: 80px;">S.No</th>
@@ -136,17 +149,17 @@
 
         <div class="form-group">
           <label class="form-label" for="edit-roll-no">Roll Number *</label>
-          <input type="text" id="edit-roll-no" class="form-control" required>
+          <input type="text" id="edit-roll-no" class="form-control" data-testid="edit-roll-number" required>
         </div>
 
         <div class="form-group">
           <label class="form-label" for="edit-name">Student Full Name *</label>
-          <input type="text" id="edit-name" class="form-control" required>
+          <input type="text" id="edit-name" class="form-control" data-testid="edit-name" required>
         </div>
 
         <div class="form-group">
           <label class="form-label" for="edit-department">Department *</label>
-          <select id="edit-department" class="form-control" required>
+          <select id="edit-department" class="form-control" data-testid="edit-department" required>
             <option value="CSE (AI & ML)">CSE (AI & ML)</option>
             <option value="CSE">CSE</option>
             <option value="Information Technology">Information Technology</option>
@@ -156,7 +169,7 @@
 
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" id="btn-cancel-edit">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="btn-save-edit">Save Changes</button>
+          <button type="button" class="btn btn-primary" id="btn-save-edit" data-testid="edit-save-student" onclick="handleSaveEditStudent(event)">Save Changes</button>
         </div>
       </form>
     </div>
@@ -167,9 +180,10 @@
 
   <!-- Footer -->
   <footer>
-    <p>Student Attendance Management System Using DevOps Tools • B.Tech CSE Project</p>
+    <p>Student Attendance and Academic Performance Management System Using DevOps Tools • B.Tech CSE Project</p>
   </footer>
 
+  <script src="auth.js"></script>
   <script src="students.js"></script>
 </body>
 </html>

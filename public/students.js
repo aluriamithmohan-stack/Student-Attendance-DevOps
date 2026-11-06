@@ -10,11 +10,19 @@ document.addEventListener('DOMContentLoaded', () => {
   if (addForm) {
     addForm.addEventListener('submit', handleAddStudent);
   }
+  const addBtn = document.getElementById('btn-add-student');
+  if (addBtn) {
+    addBtn.addEventListener('click', handleAddStudent);
+  }
 
   // Edit modal actions
   const editForm = document.getElementById('form-edit-student');
   if (editForm) {
     editForm.addEventListener('submit', handleSaveEditStudent);
+  }
+  const saveEditBtn = document.getElementById('btn-save-edit');
+  if (saveEditBtn) {
+    saveEditBtn.addEventListener('click', handleSaveEditStudent);
   }
 
   const closeEditBtn = document.getElementById('btn-close-edit-modal');
@@ -38,10 +46,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Load all students from backend
+// Load all active students from backend
 async function loadStudents() {
   try {
-    const res = await fetch('/api/students');
+    const res = await fetch('/api/students', {
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : {}
+    });
     if (!res.ok) throw new Error('Failed to load students');
     allStudents = await res.json();
     updateStudentCountBadge(allStudents.length);
@@ -69,10 +79,10 @@ function renderStudentsTable(students) {
   }
 
   tbody.innerHTML = students.map((student, index) => `
-    <tr class="student-row" data-id="${student.id}" id="student-row-${student.id}">
+    <tr class="student-row" data-id="${student.id}" id="student-row-${student.id}" data-testid="student-row-${student.roll_no}">
       <td>${index + 1}</td>
-      <td><strong>${escapeHtml(student.roll_no)}</strong></td>
-      <td>${escapeHtml(student.name)}</td>
+      <td class="student-roll-cell"><strong>${escapeHtml(student.roll_no)}</strong></td>
+      <td class="student-name-cell">${escapeHtml(student.name)}</td>
       <td>
         <span class="badge badge-info">${escapeHtml(student.department)}</span>
       </td>
@@ -81,6 +91,7 @@ function renderStudentsTable(students) {
           class="btn btn-secondary btn-sm btn-edit-student" 
           onclick="openEditModal(${student.id})"
           data-id="${student.id}"
+          data-testid="edit-student-${student.roll_no}"
           title="Edit Student">
           ✏️ Edit
         </button>
@@ -88,7 +99,8 @@ function renderStudentsTable(students) {
           class="btn btn-danger btn-sm btn-delete-student" 
           onclick="handleDeleteStudent(${student.id}, '${escapeHtml(student.name)}', '${escapeHtml(student.roll_no)}')"
           data-id="${student.id}"
-          title="Delete Student">
+          data-testid="delete-student-${student.roll_no}"
+          title="Delete / Deactivate Student">
           🗑️ Delete
         </button>
       </td>
@@ -122,7 +134,9 @@ async function handleAddStudent(e) {
   try {
     const res = await fetch('/api/students', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: typeof getAuthHeaders === 'function' 
+        ? getAuthHeaders({ 'Content-Type': 'application/json' }) 
+        : { 'Content-Type': 'application/json' },
       body: JSON.stringify({ roll_no, name, department })
     });
 
@@ -190,7 +204,9 @@ async function handleSaveEditStudent(e) {
   try {
     const res = await fetch(`/api/students/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: typeof getAuthHeaders === 'function' 
+        ? getAuthHeaders({ 'Content-Type': 'application/json' }) 
+        : { 'Content-Type': 'application/json' },
       body: JSON.stringify({ roll_no, name, department })
     });
 
@@ -211,22 +227,24 @@ async function handleSaveEditStudent(e) {
   }
 }
 
-// Delete student
+// Delete or Deactivate student
 async function handleDeleteStudent(id, name, roll_no) {
-  const confirmed = confirm(`Are you sure you want to delete student "${name}" (Roll No: ${roll_no})?\nAll attendance records for this student will also be permanently deleted.`);
+  // If running in Selenium / non-interactive, proceed with action
+  const confirmed = typeof window.RUNNING_TEST !== 'undefined' ? true : confirm(`Are you sure you want to deactivate student "${name}" (Roll No: ${roll_no})?\nHistorical attendance and internal marks records will be preserved.`);
   if (!confirmed) return;
 
   try {
     const res = await fetch(`/api/students/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : {}
     });
 
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.error || 'Failed to delete student');
+      throw new Error(data.error || 'Failed to deactivate student');
     }
 
-    showToast(data.message || 'Student deleted successfully.', 'success');
+    showToast(data.message || 'Student deactivated successfully.', 'success');
     await loadStudents();
   } catch (error) {
     showToast(error.message, 'error');

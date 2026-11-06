@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faculty Login - Student Attendance & Academic Performance System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background-color: var(--bg-page);">
+
+  <div class="card" style="max-width: 420px; width: 100%; margin: 1.5rem; box-shadow: var(--shadow-lg);">
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+      <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🎓</div>
+      <h1 class="page-title" style="font-size: 1.4rem;">Faculty Login</h1>
+      <p class="page-subtitle">Student Attendance & Academic Performance Management</p>
+    </div>
+
+    <!-- Alert Message -->
+    <div id="login-alert" class="alert alert-danger" data-testid="login-error" style="display: none;"></div>
+
+    <form id="form-login" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="login-username">Faculty Username *</label>
+        <input 
+          type="text" 
+          id="login-username" 
+          name="username" 
+          class="form-control" 
+          placeholder="e.g. faculty" 
+          data-testid="login-username" 
+          required 
+          autofocus>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="login-password">Password *</label>
+        <input 
+          type="password" 
+          id="login-password" 
+          name="password" 
+          class="form-control" 
+          placeholder="Enter password" 
+          data-testid="login-password" 
+          required>
+      </div>
+
+      <div style="margin-top: 1.5rem;">
+        <button type="submit" class="btn btn-primary" id="btn-login" data-testid="login-button" style="width: 100%;">
+          🔐 Sign In
+        </button>
+      </div>
+
+      <div style="margin-top: 1.25rem; font-size: 0.8rem; color: var(--text-muted); text-align: center;">
+        Default Credentials: <strong>faculty</strong> / <strong>password123</strong>
+      </div>
+    </form>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Check if already authenticated
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated) {
+            window.location.href = 'index.html';
+          }
+        }
+      } catch (e) {}
+
+      const form = document.getElementById('form-login');
+      const alertBox = document.getElementById('login-alert');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        alertBox.style.display = 'none';
+
+        const username = document.getElementById('login-username').value.trim();
+        const password = document.getElementById('login-password').value;
+
+        if (!username || !password) {
+          alertBox.textContent = 'Please enter both username and password.';
+          alertBox.style.display = 'block';
+          return;
+        }
+
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            alertBox.textContent = data.error || 'Login failed. Please check credentials.';
+            alertBox.style.display = 'block';
+            return;
+          }
+
+          // Successfully logged in
+          window.location.href = 'index.html';
+        } catch (err) {
+          alertBox.textContent = 'Connection error: ' + err.message;
+          alertBox.style.display = 'block';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

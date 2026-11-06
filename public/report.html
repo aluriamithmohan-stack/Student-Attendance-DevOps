@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Monthly Attendance Reports - Student Attendance Management System</title>
+  <title>Monthly Attendance & Academic Reports - Student Attendance & Academic Performance System</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,14 +12,15 @@
   <nav class="navbar">
     <div class="nav-container">
       <a href="index.html" class="brand" id="nav-brand">
-        <span>🎓 Attendance DevOps</span>
+        <span>🎓 Attendance & Academic DevOps</span>
         <span class="brand-badge">B.Tech CSE</span>
       </a>
       <ul class="nav-links">
         <li><a href="index.html" id="nav-dashboard">Dashboard</a></li>
         <li><a href="students.html" id="nav-students">Student Management</a></li>
         <li><a href="attendance.html" id="nav-attendance">Daily Attendance</a></li>
-        <li><a href="report.html" class="active" id="nav-reports">Monthly Reports</a></li>
+        <li><a href="marks.html" id="nav-marks">Internal Marks</a></li>
+        <li><a href="report.html" class="active" id="nav-reports">Reports & Performance</a></li>
       </ul>
     </div>
   </nav>
@@ -28,11 +29,11 @@
   <main class="container">
     <div class="page-header">
       <div>
-        <h1 class="page-title" id="page-title-reports">Monthly Attendance Reports</h1>
-        <p class="page-subtitle">Calculate attendance percentage, identify defaulters, and export CSV</p>
+        <h1 class="page-title" id="page-title-reports">Monthly Attendance & Academic Reports</h1>
+        <p class="page-subtitle">Calculate attendance percentage, identify defaulters, track internal marks, and export CSV</p>
       </div>
       <div>
-        <button type="button" class="btn btn-success" id="btn-export-csv">
+        <button type="button" class="btn btn-success" id="btn-export-csv" data-testid="export-csv" onclick="triggerCSVExport()">
           📥 Export as CSV
         </button>
       </div>
@@ -44,7 +45,7 @@
         
         <div class="form-group" style="min-width: 160px; margin-bottom: 0;">
           <label class="form-label" for="report-month">Select Month</label>
-          <select id="report-month" class="form-control">
+          <select id="report-month" class="form-control" data-testid="report-month-select">
             <option value="1">January (01)</option>
             <option value="2">February (02)</option>
             <option value="3">March (03)</option>
@@ -62,16 +63,16 @@
 
         <div class="form-group" style="width: 120px; margin-bottom: 0;">
           <label class="form-label" for="report-year">Year</label>
-          <input type="number" id="report-year" class="form-control" value="2026" min="2020" max="2035">
+          <input type="number" id="report-year" class="form-control" value="2026" min="2020" max="2035" data-testid="report-year-input">
         </div>
 
         <div class="form-group" style="width: 150px; margin-bottom: 0;">
           <label class="form-label" for="report-threshold">Threshold (%)</label>
-          <input type="number" id="report-threshold" class="form-control" value="75" min="1" max="100">
+          <input type="number" id="report-threshold" class="form-control" value="75" min="1" max="100" data-testid="report-threshold-input">
         </div>
 
         <div class="form-group" style="margin-bottom: 0;">
-          <button type="button" class="btn btn-primary" id="btn-generate-report">
+          <button type="button" class="btn btn-primary" id="btn-generate-report" data-testid="monthly-report">
             🔄 Generate Report
           </button>
         </div>
@@ -100,7 +101,7 @@
       </div>
     </div>
 
-    <!-- Monthly Report Table (matches project specification screenshot) -->
+    <!-- Monthly Report Table -->
     <div class="card" style="padding: 0; overflow: hidden;" id="card-monthly-table">
       <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); background-color: #fafbfc; display: flex; justify-content: space-between; align-items: center;">
         <h3 class="card-title" id="report-heading" style="margin: 0;">Monthly Attendance Summary</h3>
@@ -108,7 +109,7 @@
       </div>
 
       <div class="table-responsive">
-        <table id="table-monthly-report">
+        <table id="table-monthly-report" data-testid="table-monthly-report">
           <thead>
             <tr>
               <th style="width: 100px;">Roll No.</th>
@@ -133,38 +134,73 @@
     </div>
   </main>
 
-  <!-- Individual Student Detailed Modal -->
+  <!-- Individual Student Combined Report Modal -->
   <div class="modal-overlay" id="modal-student-report">
-    <div class="modal" style="max-width: 750px;">
+    <div class="modal" style="max-width: 850px;">
       <div class="modal-header">
-        <h3 class="modal-title" id="modal-student-name">Student Attendance History</h3>
+        <h3 class="modal-title" id="modal-student-name">Student Academic & Attendance Report</h3>
         <button type="button" class="modal-close" id="btn-close-student-modal">&times;</button>
       </div>
 
-      <div id="modal-student-info" style="margin-bottom: 1rem;">
+      <!-- Student Info & Metrics -->
+      <div id="modal-student-info" style="margin-bottom: 1.25rem;">
         <!-- Injected via JavaScript -->
       </div>
 
-      <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--dark);">Daily Period Breakdown</h4>
-      <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
-        <table id="table-student-breakdown">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th class="period-header">P1</th>
-              <th class="period-header">P2</th>
-              <th class="period-header">P3</th>
-              <th class="period-header">P4</th>
-              <th class="period-header">P5</th>
-              <th class="period-header">P6</th>
-              <th class="period-header">P7</th>
-              <th style="text-align: right;">Total Present</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-student-breakdown">
-            <!-- Injected via JavaScript -->
-          </tbody>
-        </table>
+      <!-- Section Tabs -->
+      <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin-bottom: 1rem;">
+        <button type="button" class="btn btn-secondary btn-sm" id="tab-btn-attendance" style="border-bottom-left-radius: 0; border-bottom-right-radius: 0; font-weight: 600;">
+          📅 Daily Attendance History
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" id="tab-btn-academics" style="border-bottom-left-radius: 0; border-bottom-right-radius: 0; font-weight: 600;">
+          📚 Internal Marks & Academic Performance
+        </button>
+      </div>
+
+      <!-- Daily Attendance Tab Content -->
+      <div id="tab-content-attendance">
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--dark);">Daily Period Breakdown (P1 to P7)</h4>
+        <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+          <table id="table-student-breakdown">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th class="period-header">P1</th>
+                <th class="period-header">P2</th>
+                <th class="period-header">P3</th>
+                <th class="period-header">P4</th>
+                <th class="period-header">P5</th>
+                <th class="period-header">P6</th>
+                <th class="period-header">P7</th>
+                <th style="text-align: right;">Total Present</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-student-breakdown">
+              <!-- Injected via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Academic Performance Tab Content -->
+      <div id="tab-content-academics" style="display: none;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--dark);">Internal Assessments & Marks Breakdown</h4>
+        <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+          <table id="table-student-academics">
+            <thead>
+              <tr>
+                <th>Subject</th>
+                <th>Assessment Name</th>
+                <th style="text-align: right;">Marks Obtained</th>
+                <th style="text-align: right;">Max Marks</th>
+                <th style="text-align: right;">Marks %</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-student-academics">
+              <!-- Injected via JavaScript -->
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="modal-footer">
@@ -178,9 +214,10 @@
 
   <!-- Footer -->
   <footer>
-    <p>Student Attendance Management System Using DevOps Tools • B.Tech CSE Project</p>
+    <p>Student Attendance and Academic Performance Management System Using DevOps Tools • B.Tech CSE Project</p>
   </footer>
 
+  <script src="auth.js"></script>
   <script src="report.js"></script>
 </body>
 </html>

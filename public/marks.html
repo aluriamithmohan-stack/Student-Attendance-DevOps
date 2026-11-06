@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Internal Marks Management - Student Attendance & Academic Performance System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand" id="nav-brand">
+        <span>🎓 Attendance & Academic DevOps</span>
+        <span class="brand-badge">B.Tech CSE</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html" id="nav-dashboard">Dashboard</a></li>
+        <li><a href="students.html" id="nav-students">Student Management</a></li>
+        <li><a href="attendance.html" id="nav-attendance">Daily Attendance</a></li>
+        <li><a href="marks.html" class="active" id="nav-marks">Internal Marks</a></li>
+        <li><a href="report.html" id="nav-reports">Reports & Performance</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="container">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title" id="page-title-marks">Internal Marks Management</h1>
+        <p class="page-subtitle">Record and update student assessment scores, calculate percentages, and track academic performance</p>
+      </div>
+      <div>
+        <span class="badge badge-info" id="badge-marks-count">0 Assessments Recorded</span>
+      </div>
+    </div>
+
+    <!-- Add / Update Marks Form Card -->
+    <div class="card" id="card-add-marks">
+      <div class="card-header">
+        <h2 class="card-title" id="form-card-title">Enter Internal Marks</h2>
+      </div>
+
+      <!-- Alert Box -->
+      <div id="marks-form-alert" class="alert alert-danger" data-testid="marks-error" style="display: none;"></div>
+
+      <form id="form-marks" novalidate>
+        <input type="hidden" id="edit-mark-id">
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 1.5; min-width: 220px;">
+            <label class="form-label" for="select-student">Select Student *</label>
+            <select id="select-student" class="form-control" data-testid="marks-student-select" required>
+              <option value="">-- Choose Student --</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="flex: 2; min-width: 200px;">
+            <label class="form-label" for="input-subject">Subject Name *</label>
+            <input 
+              type="text" 
+              id="input-subject" 
+              class="form-control" 
+              placeholder="e.g. DevOps & Cloud Computing" 
+              data-testid="marks-subject" 
+              required>
+          </div>
+
+          <div class="form-group" style="flex: 1.5; min-width: 180px;">
+            <label class="form-label" for="input-assessment">Assessment Name *</label>
+            <input 
+              type="text" 
+              id="input-assessment" 
+              class="form-control" 
+              placeholder="e.g. Internal Test 1 or Lab Exam" 
+              data-testid="marks-assessment" 
+              required>
+          </div>
+
+          <div class="form-group" style="flex: 1; min-width: 130px;">
+            <label class="form-label" for="input-marks-obtained">Marks Obtained *</label>
+            <input 
+              type="number" 
+              step="0.5" 
+              min="0" 
+              id="input-marks-obtained" 
+              class="form-control" 
+              placeholder="e.g. 23" 
+              data-testid="marks-obtained" 
+              required>
+          </div>
+
+          <div class="form-group" style="flex: 1; min-width: 130px;">
+            <label class="form-label" for="input-max-marks">Max Marks *</label>
+            <input 
+              type="number" 
+              step="0.5" 
+              min="1" 
+              id="input-max-marks" 
+              class="form-control" 
+              placeholder="e.g. 25" 
+              data-testid="marks-max" 
+              required>
+          </div>
+
+          <div class="form-group">
+            <button type="button" class="btn btn-primary" id="btn-save-marks" data-testid="marks-save" onclick="handleSaveMarks(event)">
+              💾 Save Marks
+            </button>
+            <button type="button" class="btn btn-secondary" id="btn-cancel-edit-marks" style="display: none;">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Filter Marks Card -->
+    <div class="card" style="padding: 1rem;">
+      <div class="form-row" style="align-items: center;">
+        <div class="form-group" style="flex: 2; margin-bottom: 0;">
+          <input type="text" id="filter-marks-search" class="form-control" placeholder="🔍 Search by student name, roll number, or subject...">
+        </div>
+        <div class="form-group" style="flex: 1; margin-bottom: 0;">
+          <select id="filter-student-dropdown" class="form-control">
+            <option value="">All Students</option>
+          </select>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-reset-marks-filter">Reset</button>
+      </div>
+    </div>
+
+    <!-- Recorded Marks Table Card -->
+    <div class="card" style="padding: 0; overflow: hidden;" id="card-marks-table">
+      <div class="table-responsive">
+        <table id="table-marks">
+          <thead>
+            <tr>
+              <th style="width: 80px;">Roll No</th>
+              <th>Student Name</th>
+              <th>Subject</th>
+              <th>Assessment</th>
+              <th style="text-align: right; width: 130px;">Marks Obtained</th>
+              <th style="text-align: right; width: 110px;">Max Marks</th>
+              <th style="text-align: right; width: 130px;">Percentage</th>
+              <th style="text-align: center; width: 140px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-marks">
+            <tr>
+              <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                Loading internal marks records...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast"></div>
+
+  <footer>
+    <p>Student Attendance and Academic Performance Management System Using DevOps Tools</p>
+  </footer>
+
+  <script src="auth.js"></script>
+  <script src="marks.js"></script>
+</body>
+</html>
